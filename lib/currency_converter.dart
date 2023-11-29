@@ -14,6 +14,9 @@ class ValueModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+  void notify() {
+    notifyListeners();
+  }
 }
 
 class CurrencyConversionRoute extends StatelessWidget {
@@ -88,6 +91,8 @@ class _CurrencyFieldState extends State<CurrencyField> {
   void _setCurrency(Map currency) {
     setState(() {
       selectedCurrency = currency;
+      var model = context.read<ValueModel>();
+      model.notify();
     });
   }
 
