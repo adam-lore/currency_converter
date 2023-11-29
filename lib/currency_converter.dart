@@ -1,24 +1,11 @@
+import 'package:currency_converter/currency_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-enum CurrencyLabel {
-  cny("Chinese Yuan", 7.08, "china", "CNY"),
-  eur("Euro", 0.91, "europe", "EUR"),
-  gbp("Pound Sterling", 0.79, "united-kingdom", "GBP"),
-  jpy("Japanese Yen", 147.47, "japan", "JPY"),
-  krw("South Korean Won", 1288.12, "south-korea", "KRW"),
-  sek("Swedish Krona", 10.32, "sweden", "SEK"),
-  usd("United States Dollar", 1.0, "united-states-of-america", "USD");
+import 'currency_model.dart';
+import 'exchange_rates.dart';
 
-  const CurrencyLabel(this.label, this.ratio, this.country, this.name);
-  final String label;
-  final double ratio;
-  final String country;
-  final String name;
-}
-
-class CurrencyModel extends ChangeNotifier {
+class ValueModel extends ChangeNotifier {
   double dollarValue = 0;
 
   void updateDollarValue(value) {
@@ -29,25 +16,36 @@ class CurrencyModel extends ChangeNotifier {
   }
 }
 
-class CurrencyConversionPage extends StatelessWidget {
-
-  const CurrencyConversionPage({super.key});
+class CurrencyConversionRoute extends StatelessWidget {
+  const CurrencyConversionRoute({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 2,
-        title: const Text("Currency Converter"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            CurrencyField(Theme.of(context).colorScheme.surface),
-            CurrencyField(Theme.of(context).colorScheme.primary),
-          ],
+    return ChangeNotifierProvider(
+      create: (context) => ValueModel(),
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          elevation: 10,
+          title: const Text("Currency Converter"),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              CurrencyField(Theme.of(context).colorScheme.surface),
+              CurrencyField(Theme.of(context).colorScheme.primary),
+              ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ExchangeRateRoute()),
+                    );
+                  },
+                  child: const Text("Exchange Rates"),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -55,25 +53,26 @@ class CurrencyConversionPage extends StatelessWidget {
 }
 
 class CurrencyField extends StatefulWidget {
-  Color color;
+  final Color color;
 
-  CurrencyField(this.color, {super.key});
+  const CurrencyField(this.color, {super.key});
 
   @override
   State<CurrencyField> createState() => _CurrencyFieldState();
 }
 
 class _CurrencyFieldState extends State<CurrencyField> {
-
   final currencyController = TextEditingController();
   final valueController = TextEditingController();
-  CurrencyLabel selectedCurrency = CurrencyLabel.eur;
 
+  late Map selectedCurrency;
   late FocusNode currencyFieldFocusNode;
 
   @override
   void initState() {
     super.initState();
+
+    selectedCurrency = Provider.of<CurrencyModel>(context, listen: false).currencies[1];
 
     currencyFieldFocusNode = FocusNode();
     valueController.addListener(_updateDollarValue);
@@ -85,18 +84,24 @@ class _CurrencyFieldState extends State<CurrencyField> {
     valueController.dispose();
     super.dispose();
   }
+  
+  void _setCurrency(Map currency) {
+    setState(() {
+      selectedCurrency = currency;
+    });
+  }
 
   void _updateDollarValue() {
     if (!currencyFieldFocusNode.hasFocus) return;
     final text = valueController.text;
     final value = double.tryParse(text);
     if (text == "") {
-      var model = context.read<CurrencyModel>();
+      var model = context.read<ValueModel>();
       model.updateDollarValue(0.0);
     } else if (value != null) {
-      var model = context.read<CurrencyModel>();
-      //Convert to dollars and update CurrencyModel
-      model.updateDollarValue(value / selectedCurrency.ratio);
+      var model = context.read<ValueModel>();
+      //Convert to dollars and update ValueModel
+      model.updateDollarValue(value / selectedCurrency["ratio"]);
     }
   }
 
@@ -106,80 +111,59 @@ class _CurrencyFieldState extends State<CurrencyField> {
       padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
       child: Card(
         color: widget.color,
+        elevation: 5,
         child: Padding(
           padding: const EdgeInsets.all(10),
-          child: Column(
-            children: <Widget>[
-              FractionallySizedBox(
-                widthFactor: 1,
-                child: DropdownMenu<CurrencyLabel>(
-                  initialSelection: CurrencyLabel.eur,
-                  controller: currencyController,
-                  leadingIcon: SvgPicture.asset(
-                    'assets/images/flags/${selectedCurrency.country}-flag.svg', //assetName
-                    semanticsLabel: 'Europe Flag',
-                    width: 50,
+          child: Consumer<CurrencyModel>(
+            builder: (context, currencyModel, child) {
+              return Column(
+                children: <Widget>[
+                  CurrencyDropdown(
+                    selectedCurrency: selectedCurrency,
+                    currencyModel: currencyModel,
+                    setCurrency: _setCurrency,
                   ),
-                  onSelected: (CurrencyLabel? currency) {
-                    setState(() {
-                      if (currency != null) {
-                        selectedCurrency = currency;
-                      }
-                    });
-                  },
-                  dropdownMenuEntries: CurrencyLabel.values
-                      .map<DropdownMenuEntry<CurrencyLabel>>((CurrencyLabel currency) {
-                    return DropdownMenuEntry<CurrencyLabel>(
-                      value: currency,
-                      leadingIcon: SvgPicture.asset(
-                        'assets/images/flags/${currency.country}-flag.svg', //assetName
-                        semanticsLabel: 'Europe Flag',
-                        width: 50,
-                      ),
-                      label: currency.label,
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                      child: Consumer<CurrencyModel> (
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Consumer<ValueModel>(
                           builder: (context, model, child) {
-                            //Do not update field if in focus
-                            if (!currencyFieldFocusNode.hasFocus) {
-                              valueController.text = (model.dollarValue * selectedCurrency!.ratio).toStringAsFixed(2);
-                            }
-                            return TextField(
-                              controller: valueController,
-                              keyboardType: TextInputType.number,
-                              focusNode: currencyFieldFocusNode,
-                              decoration: InputDecoration(
-                                border: const OutlineInputBorder(),
-                                focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)
-                                ),
-                                fillColor: Theme.of(context).colorScheme.surface,
-                                filled: false,
-                              ),
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            );
-                          }
-                      )
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      "EUR",
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
+                        //Do not update field if in focus
+                        if (!currencyFieldFocusNode.hasFocus) {
+                          valueController.text =
+                              (model.dollarValue * selectedCurrency["ratio"])
+                                  .toStringAsFixed(2);
+                        }
+                        return TextField(
+                          controller: valueController,
+                          keyboardType: TextInputType.number,
+                          focusNode: currencyFieldFocusNode,
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.primary)),
+                            fillColor: Theme.of(context).colorScheme.surface,
+                            filled: false,
+                          ),
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        );
+                      })),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          selectedCurrency["code"].toUpperCase(), //CurrencyCode
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
