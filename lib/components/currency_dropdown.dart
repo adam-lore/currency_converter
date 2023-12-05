@@ -12,19 +12,25 @@ class CurrencyDropdown extends StatelessWidget {
     this.localCurrency,
   });
 
-  final Currency selectedCurrency;
+  final Currency? selectedCurrency;
   final CurrencyModel currencyModel;
   final Function setCurrency;
   final String? localCurrency;
 
   @override
   Widget build(BuildContext context) {
+    if (currencyModel.currencies.isEmpty || selectedCurrency == null) {
+      return Text(
+          "No currencies loaded",
+          style: Theme.of(context).textTheme.headlineSmall,
+      );
+    }
     return FractionallySizedBox(
       widthFactor: 1,
       child: DropdownMenu<Currency>(
         initialSelection: selectedCurrency,
         leadingIcon: SvgPicture.asset(
-          'assets/images/flags/${selectedCurrency.country}-flag.svg', //assetName
+          'assets/images/flags/${selectedCurrency!.country}-flag.svg', //assetName
           semanticsLabel: 'Europe Flag',
           width: 50,
         ),

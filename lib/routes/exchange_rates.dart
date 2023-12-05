@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/currency_model.dart';
+import '../models/location_model.dart';
+
 import '../components/currency_dropdown.dart';
 
 class ExchangeRateRoute extends StatefulWidget {
@@ -12,18 +14,23 @@ class ExchangeRateRoute extends StatefulWidget {
   State<ExchangeRateRoute> createState() => _ExchangeRateState();
 }
 class _ExchangeRateState extends State<ExchangeRateRoute> {
-  late Currency selectedCurrency;
+  Currency? selectedCurrency;
+
+  bool changedCurrency = false;
 
   @override
   void initState() {
     super.initState();
+    if (Provider.of<CurrencyModel>(context, listen: false).currencies.isNotEmpty) {
+      selectedCurrency = Provider.of<CurrencyModel>(context, listen: false).currencies[0];
+    }
 
-    selectedCurrency = Provider.of<CurrencyModel>(context, listen: false).currencies[1];
   }
 
   void _setCurrency(Currency currency) {
     setState(() {
       selectedCurrency = currency;
+      changedCurrency = true;
     });
   }
 
@@ -39,8 +46,20 @@ class _ExchangeRateState extends State<ExchangeRateRoute> {
             title: const Text("Exchange Rates"),
           ),
           body: Center(
-            child: Consumer<CurrencyModel>(
-              builder: (context, currencyModel, child) {
+            child: Consumer2<CurrencyModel, LocationModel>(
+                builder: (context, currencyModel, locationModel, child) {
+                  if (currencyModel.currencies.isEmpty) {
+                    return Text(
+                      "No currencies loaded",
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    );
+                  }
+                  if (!changedCurrency) {
+                    selectedCurrency = currencyModel.currencies.firstWhere(
+                            (currency) => currency.code == locationModel.currency,
+                        orElse: () => selectedCurrency!
+                    );
+                  }
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
@@ -58,7 +77,7 @@ class _ExchangeRateState extends State<ExchangeRateRoute> {
                           itemCount: currencyModel.currencies.length,
                           itemBuilder: (context, index) {
                             Currency currency = currencyModel.currencies[index];
-                            if (currency.code == selectedCurrency.code) return Container();
+                            if (currency.code == selectedCurrency!.code) return Container();
                             return Padding(
                               padding: const EdgeInsets.only(top: 20),
                               child: Row(
@@ -75,7 +94,7 @@ class _ExchangeRateState extends State<ExchangeRateRoute> {
                                   ),
                                   const Spacer(),
                                   Text(
-                              (currency.ratio / selectedCurrency.ratio).toStringAsFixed(3), //CurrencyCode
+                              (currency.ratio / selectedCurrency!.ratio).toStringAsFixed(3), //CurrencyCode
                                     style: Theme.of(context).textTheme.headlineSmall,
                                   ),
                                 ],

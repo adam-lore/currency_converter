@@ -20,7 +20,7 @@ class _CurrencyFieldState extends State<CurrencyField> {
   final currencyController = TextEditingController();
   final valueController = TextEditingController();
 
-  late Currency selectedCurrency;
+  Currency? selectedCurrency;
   late FocusNode currencyFieldFocusNode;
 
   bool changedCurrency = false;
@@ -29,7 +29,9 @@ class _CurrencyFieldState extends State<CurrencyField> {
   void initState() {
     super.initState();
 
-    selectedCurrency = Provider.of<CurrencyModel>(context, listen: false).currencies[1];
+    if (Provider.of<CurrencyModel>(context, listen: false).currencies.isNotEmpty) {
+      selectedCurrency = Provider.of<CurrencyModel>(context, listen: false).currencies[1];
+    }
 
     currencyFieldFocusNode = FocusNode();
     valueController.addListener(_updateDollarValue);
@@ -52,7 +54,7 @@ class _CurrencyFieldState extends State<CurrencyField> {
   }
 
   void _updateDollarValue() {
-    if (!currencyFieldFocusNode.hasFocus) return;
+    if (!currencyFieldFocusNode.hasFocus || selectedCurrency == null) return;
     final text = valueController.text;
     final value = double.tryParse(text);
     if (text == "") {
@@ -61,7 +63,7 @@ class _CurrencyFieldState extends State<CurrencyField> {
     } else if (value != null) {
       var model = context.read<ValueModel>();
       //Convert to dollars and update ValueModel
-      model.updateDollarValue(value / selectedCurrency.ratio);
+      model.updateDollarValue(value / selectedCurrency!.ratio);
     }
   }
 
@@ -76,10 +78,10 @@ class _CurrencyFieldState extends State<CurrencyField> {
           padding: const EdgeInsets.all(10),
           child: Consumer2<CurrencyModel, LocationModel>(
             builder: (context, currencyModel, locationModel, child) {
-              if (!changedCurrency) {
+              if (!changedCurrency && currencyModel.currencies.isNotEmpty) {
                 selectedCurrency = currencyModel.currencies.firstWhere(
-                      (currency) => currency.code == locationModel.currency && !changedCurrency,
-                  orElse: () => selectedCurrency
+                      (currency) => currency.code == locationModel.currency,
+                  orElse: () => currencyModel.currencies[0]
                 );
               }
               return Column(
@@ -97,9 +99,9 @@ class _CurrencyFieldState extends State<CurrencyField> {
                       Expanded(child: Consumer<ValueModel>(
                           builder: (context, model, child) {
                             //Do not update field if in focus
-                            if (!currencyFieldFocusNode.hasFocus) {
+                            if (!currencyFieldFocusNode.hasFocus && selectedCurrency != null) {
                               valueController.text =
-                                  (model.dollarValue * selectedCurrency.ratio)
+                                  (model.dollarValue * selectedCurrency!.ratio)
                                       .toStringAsFixed(2);
                             }
                             return TextField(
@@ -121,7 +123,7 @@ class _CurrencyFieldState extends State<CurrencyField> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
-                          selectedCurrency.code.toUpperCase(), //CurrencyCode
+                          selectedCurrency?.code.toUpperCase() ?? "NONE", //CurrencyCode
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ),

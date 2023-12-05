@@ -7,11 +7,12 @@ class LocationModel extends ChangeNotifier {
   String? currency;
 
   Future<void> getLocalCurrency() async {
-    print("Start");
+    //await Future.delayed(Duration(seconds: 5));
     var httpUri = Uri(
         scheme: "http",
         host: "ip-api.com",
-        path: "/json/",
+        path: "/json",
+        //American ip address /json/209.142.68.29
         queryParameters: {"fields": "currency"}
     );
     try {

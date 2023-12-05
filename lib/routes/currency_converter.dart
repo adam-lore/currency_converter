@@ -1,3 +1,4 @@
+import 'package:currency_converter/models/currency_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,7 +61,25 @@ Widget _buildNormalConverter(context) {
           );
         },
         child: const Text("Exchange Rates"),
-      )
+      ),
+      ElevatedButton(
+        onPressed: () {
+          Provider.of<CurrencyModel>(context, listen: false).readCurrencies();
+        },
+        child: const Text("Get currencies"),
+      ),
+      ElevatedButton(
+        onPressed: () {
+          Provider.of<CurrencyModel>(context, listen: false).storeCurrencies();
+        },
+        child: const Text("Store currencies"),
+      ),
+      ElevatedButton(
+        onPressed: () {
+          Provider.of<CurrencyModel>(context, listen: false).getCurrencies();
+        },
+        child: const Text("Copy currencies"),
+      ),
     ],
   );
 }
