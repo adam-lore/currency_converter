@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'currency_converter.dart';
-import 'currency_model.dart';
+import 'routes/currency_converter.dart';
+import 'models/currency_model.dart';
+import 'models/location_model.dart';
 
-void main() {
+void main() async {
   runApp(const MyApp());
 }
 
@@ -12,8 +13,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => CurrencyModel(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<CurrencyModel>(create: (context) => CurrencyModel()),
+        ChangeNotifierProvider<LocationModel>(create: (context) => LocationModel()),
+      ],
       child: MaterialApp(
         title: 'Currency Converter',
         theme: ThemeData(
@@ -26,6 +30,8 @@ class MyApp extends StatelessWidget {
           ),
           textTheme: const TextTheme(
             headlineMedium: TextStyle(),
+            headlineSmall: TextStyle(),
+            labelLarge: TextStyle(),
           ).apply(
             bodyColor: Colors.white,
             displayColor: Colors.white,
@@ -36,20 +42,4 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-}
-
-enum CurrencyLabel {
-  cny("Chinese Yuan", 7.08, "china", "CNY"),
-  eur("Euro", 0.91, "europe", "EUR"),
-  gbp("Pound Sterling", 0.79, "united-kingdom", "GBP"),
-  jpy("Japanese Yen", 147.47, "japan", "JPY"),
-  krw("South Korean Won", 1288.12, "south-korea", "KRW"),
-  sek("Swedish Krona", 10.32, "sweden", "SEK"),
-  usd("United States Dollar", 1.0, "united-states-of-america", "USD");
-
-  const CurrencyLabel(this.label, this.ratio, this.country, this.name);
-  final String label;
-  final double ratio;
-  final String country;
-  final String name;
 }
