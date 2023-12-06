@@ -15,6 +15,7 @@ class ExchangeRateRoute extends StatefulWidget {
 }
 class _ExchangeRateState extends State<ExchangeRateRoute> {
   Currency? selectedCurrency;
+  String date = "";
 
   bool changedCurrency = false;
 
@@ -37,8 +38,8 @@ class _ExchangeRateState extends State<ExchangeRateRoute> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
+    return OrientationBuilder(
+      builder: (context, orientation) {
         return Scaffold(
           appBar: AppBar(
             backgroundColor: Theme.of(context).colorScheme.surface,
@@ -59,6 +60,10 @@ class _ExchangeRateState extends State<ExchangeRateRoute> {
                             (currency) => currency.code == locationModel.currency,
                         orElse: () => selectedCurrency!
                     );
+                  }
+                  if (currencyModel.timestamp != null) {
+                    DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(currencyModel.timestamp * 1000);
+                    date = "Rates updated: ${timestamp.year}-${timestamp.month}-${timestamp.day}";
                   }
                 return Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -103,6 +108,7 @@ class _ExchangeRateState extends State<ExchangeRateRoute> {
                           }
                         ),
                       ),
+                      Text(date)
                     ],
                   ),
                 );

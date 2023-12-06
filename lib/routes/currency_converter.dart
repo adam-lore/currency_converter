@@ -21,6 +21,7 @@ class _CurrencyConversionRouteState extends State<CurrencyConversionRoute> {
   @override
   void initState() {
     super.initState();
+    Provider.of<CurrencyModel>(context, listen: false).readCurrencies();
     Provider.of<LocationModel>(context, listen: false).getLocalCurrency();
   }
 
@@ -30,16 +31,16 @@ class _CurrencyConversionRouteState extends State<CurrencyConversionRoute> {
       create: (context) => ValueModel(),
       child: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
+        child: OrientationBuilder(
+          builder: (context, orientation) {
             return Scaffold(
               resizeToAvoidBottomInset : false,
-              appBar: constraints.maxWidth > 600 ? null : AppBar(
+              appBar: orientation == Orientation.landscape ? null : AppBar(
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 elevation: 10,
                 title: const Text("Currency Converter"),
               ),
-              body: constraints.maxWidth > 600 ? _buildWideConverter(context) : _buildNormalConverter(context),
+              body: orientation == Orientation.landscape ? _buildWideConverter(context) : _buildNormalConverter(context),
             );
           }
         ),
@@ -62,24 +63,23 @@ Widget _buildNormalConverter(context) {
         },
         child: const Text("Exchange Rates"),
       ),
-      ElevatedButton(
-        onPressed: () {
-          Provider.of<CurrencyModel>(context, listen: false).readCurrencies();
-        },
-        child: const Text("Get currencies"),
-      ),
-      ElevatedButton(
-        onPressed: () {
-          Provider.of<CurrencyModel>(context, listen: false).storeCurrencies();
-        },
-        child: const Text("Store currencies"),
-      ),
-      ElevatedButton(
-        onPressed: () {
-          Provider.of<CurrencyModel>(context, listen: false).getCurrencies();
-        },
-        child: const Text("Copy currencies"),
-      ),
+      Consumer<CurrencyModel>(
+        builder: (context, currencyModel, child) {
+          if (currencyModel.timestamp != null && currencyModel.timestamp != 0) {
+            DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(currencyModel.timestamp * 1000);
+            String date = "Rates updated: ${timestamp.year}-${timestamp.month}-${timestamp.day}";
+            return Text(date);
+          } else {
+          return ElevatedButton(
+            onPressed: () {
+              Provider.of<CurrencyModel>(context, listen: false).getCurrencies();
+              Provider.of<LocationModel>(context, listen: false).getLocalCurrency();
+            },
+            child: const Text("Download Exchange Rates")
+          );
+          }
+        }
+      )
     ],
   );
 }
@@ -105,6 +105,23 @@ Widget _buildWideConverter(context) {
           );
         },
         child: const Text("Exchange Rates"),
+      ),
+      Consumer<CurrencyModel>(
+          builder: (context, currencyModel, child) {
+            if (currencyModel.timestamp != null && currencyModel.timestamp != 0) {
+              DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(currencyModel.timestamp * 1000);
+              String date = "Rates updated: ${timestamp.year}-${timestamp.month}-${timestamp.day}";
+              return Text(date);
+            } else {
+              return ElevatedButton(
+                  onPressed: () {
+                    Provider.of<CurrencyModel>(context, listen: false).getCurrencies();
+                    Provider.of<LocationModel>(context, listen: false).getLocalCurrency();
+                  },
+                  child: const Text("Download Exchange Rates")
+              );
+            }
+          }
       )
     ],
   );
